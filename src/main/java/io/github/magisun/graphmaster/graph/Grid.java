@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -98,6 +100,30 @@ public class Grid {
         executedMove = move;
 
         followMove(move);
+    }
+
+    /**
+     * Constructs a grid from a given data set.
+     *
+     * @param data the grid's data set
+     */
+    public Grid(int[][] data) {
+        gridSize = new Dimension(data.length, data[0].length);
+
+        grid = new int[gridSize.width][gridSize.height];
+        for(int x = 0; x < gridSize.width; x++) {
+            for(int y = 0; y < gridSize.height; y++) {
+                if(data[x][y] == -1) {
+                    emptyX = x;
+                    emptyY = y;
+                }
+                grid[x][y] = data[x][y];
+            }
+        }
+
+        executedMove = MoveType.NONE;
+
+        calculateHash();
     }
 
     /**
@@ -421,5 +447,14 @@ public class Grid {
         }
 
         return true;
+    }
+
+    void writeToStream(ObjectOutputStream stream)
+            throws IOException {
+        for(int x = 0; x < gridSize.width; x++) {
+            for(int y = 0; y < gridSize.height; y++) {
+                stream.writeInt(grid[x][y]);
+            }
+        }
     }
 }
