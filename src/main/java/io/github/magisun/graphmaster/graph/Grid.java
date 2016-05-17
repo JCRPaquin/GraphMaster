@@ -100,6 +100,7 @@ public class Grid {
         executedMove = move;
 
         followMove(move);
+        getFullGrid();
     }
 
     /**
@@ -348,6 +349,8 @@ public class Grid {
         copy[emptyX][emptyY] = -1;
 
         grid = copy;
+        calculateHash();
+
         return grid;
     }
 
@@ -447,6 +450,12 @@ public class Grid {
         }
 
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof Grid)) return false;
+        return isSimilar((Grid) o);
     }
 
     void writeToStream(ObjectOutputStream stream)
