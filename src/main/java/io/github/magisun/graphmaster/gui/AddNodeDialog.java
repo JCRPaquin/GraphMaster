@@ -1,6 +1,5 @@
 package io.github.magisun.graphmaster.gui;
 
-import com.sun.istack.internal.NotNull;
 import edu.uci.ics.jung.graph.Graph;
 import io.github.magisun.graphmaster.graph.Grid;
 import io.github.magisun.graphmaster.graph.MoveType;
@@ -142,7 +141,7 @@ public class AddNodeDialog extends JDialog {
         private Grid option;
         private BufferedImage buffer;
 
-        public OptionPanel(@NotNull Grid option) {
+        public OptionPanel(Grid option) {
             this.option = option;
 
             setSize(100, 100);

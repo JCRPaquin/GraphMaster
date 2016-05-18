@@ -3,8 +3,6 @@ package io.github.magisun.graphmaster.gui.control;
 import com.google.common.base.Function;
 import edu.uci.ics.jung.algorithms.layout.GraphElementAccessor;
 import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.graph.DelegateForest;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.visualization.Layer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.GraphMousePlugin;
@@ -13,7 +11,6 @@ import io.github.magisun.graphmaster.graph.Transition;
 import io.github.magisun.graphmaster.gui.AddNodeDialog;
 import io.github.magisun.graphmaster.gui.AddOriginNodeDialog;
 import io.github.magisun.graphmaster.gui.MainWindow;
-import sun.applet.Main;
 
 import javax.swing.*;
 import java.awt.*;
