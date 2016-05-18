@@ -5,11 +5,10 @@ import edu.uci.ics.jung.graph.DelegateForest;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.Forest;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
-import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
-import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
-import edu.uci.ics.jung.visualization.control.SatelliteVisualizationViewer;
+import edu.uci.ics.jung.visualization.control.*;
 import edu.uci.ics.jung.visualization.picking.ClosestShapePickSupport;
 import io.github.magisun.graphmaster.graph.Grid;
+import io.github.magisun.graphmaster.graph.GridForestSerializer;
 import io.github.magisun.graphmaster.graph.Transition;
 import io.github.magisun.graphmaster.gui.control.EditNodesPlugin;
 import io.github.magisun.graphmaster.gui.transformers.GridIconTransformer;
@@ -18,6 +17,10 @@ import io.github.magisun.graphmaster.gui.transformers.GridShapeTransformer;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -61,9 +64,10 @@ public class MainWindow extends JFrame {
         layout.putConstraint(SpringLayout.SOUTH, info,
                 -10, SpringLayout.SOUTH, contentPane);
         layout.putConstraint(SpringLayout.NORTH, info,
-                -160, SpringLayout.SOUTH, contentPane);
+                0, SpringLayout.SOUTH, contentPane);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        /*
         contentPane.add(splitPane);
         layout.putConstraint(SpringLayout.NORTH, splitPane,
                 10, SpringLayout.NORTH, contentPane);
@@ -73,6 +77,7 @@ public class MainWindow extends JFrame {
                 -300, SpringLayout.EAST, splitPane);
         layout.putConstraint(SpringLayout.SOUTH, splitPane,
                 -10, SpringLayout.NORTH, info);
+        */
 
         graph = new DirectedSparseGraph<>();
         Forest<Grid, Transition> forest = new DelegateForest<>(graph);
@@ -84,6 +89,7 @@ public class MainWindow extends JFrame {
         viewer.getRenderContext()
                 .setVertexShapeTransformer(GridShapeTransformer.SINGLETON);
         DefaultModalGraphMouse<Grid, Transition> mouse = new DefaultModalGraphMouse<>();
+        disableScalingPlugin(mouse);
         mouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
         mouse.add(new EditNodesPlugin());
         viewer.setGraphMouse(mouse);
@@ -92,11 +98,11 @@ public class MainWindow extends JFrame {
         layout.putConstraint(SpringLayout.WEST, viewer,
                 0, SpringLayout.WEST, info);
         layout.putConstraint(SpringLayout.EAST, viewer,
-                -10, SpringLayout.WEST, splitPane);
+                -10, SpringLayout.EAST, contentPane);
         layout.putConstraint(SpringLayout.SOUTH, viewer,
-                0, SpringLayout.SOUTH, splitPane);
+                -10, SpringLayout.NORTH, info);
         layout.putConstraint(SpringLayout.NORTH, viewer,
-                0, SpringLayout.NORTH, splitPane);
+                10, SpringLayout.NORTH, contentPane);
         viewer.setBorder(new LineBorder(Color.BLACK));
 
         satellite = new SatelliteVisualizationViewer<>(viewer, new Dimension(0,0));
@@ -105,8 +111,104 @@ public class MainWindow extends JFrame {
         control = new ControlPanel();
         splitPane.setBottomComponent(control);
 
+        constructMenu();
+
         pack();
         setVisible(true);
+    }
+
+    private void constructMenu() {
+        JMenuBar menu = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("File");
+        menu.add(fileMenu);
+
+        JMenuItem save = new JMenuItem("Save graph...");
+        save.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                FileOutputStream fout;
+
+                while(true) {
+                    File saveTo = chooseFile();
+                    if(saveTo == null) return;
+                    try {
+                        fout = new FileOutputStream(saveTo);
+                        break;
+                    } catch(Exception ex) {}
+                }
+
+                GridForestSerializer serializer = new GridForestSerializer(getGraph());
+                try {
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(fout);
+                    objectOutputStream.writeObject(serializer);
+                    objectOutputStream.flush();
+                    objectOutputStream.close();
+                } catch(Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        fileMenu.add(save);
+
+        JMenuItem load = new JMenuItem("Load graph...");
+        load.setEnabled(false);
+        load.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                FileInputStream fin;
+
+                while(true) {
+                    File loadFrom = chooseFile();
+                    if(loadFrom == null) return;
+                    try {
+                        fin = new FileInputStream(loadFrom);
+                        break;
+                    } catch(Exception ex) {}
+                }
+
+                try {
+                    ObjectInputStream objectInputStream = new ObjectInputStream(fin);
+                    GridForestSerializer serializer = (GridForestSerializer) objectInputStream.readObject();
+                    viewer.setGraphLayout(new TreeLayout<>(serializer.getForest()));
+                    objectInputStream.close();
+                } catch(Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        fileMenu.add(load);
+
+        setJMenuBar(menu);
+    }
+
+    private File chooseFile() {
+        JFileChooser fileChooser = new JFileChooser();
+
+        int returnVal = fileChooser.showOpenDialog(this);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile();
+        } else {
+            return null;
+        }
+    }
+
+    /*
+     * Scaling distorts mouse translation.
+     * Disable until fix is found.
+     * TODO: Find a fix.
+     */
+    private void disableScalingPlugin(AbstractModalGraphMouse mouse) {
+        try {
+            Field pluginField = AbstractModalGraphMouse.class.getDeclaredField("scalingPlugin");
+            pluginField.setAccessible(true);
+
+            GraphMousePlugin plugin = (GraphMousePlugin) pluginField.get(mouse);
+            mouse.remove(plugin);
+        } catch(Exception ex) {
+            System.err.println("Exception encountered while attempting to disable scaling plugin.");
+            ex.printStackTrace();
+        }
     }
 
     /**

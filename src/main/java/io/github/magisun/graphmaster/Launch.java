@@ -27,10 +27,12 @@ public class Launch {
     public static void main(String[] args) {
         MainWindow w = MainWindow.getWindow();
 
+
         Grid g = new Grid(3, 3);
         w.getGraph().addVertex(g);
 
         Grid g2 = new Grid(g, MoveType.UP);
+        g2.setLensColor(new Color(100, 0, 100, 100));
         w.getGraph().addVertex(g2);
 
         Transition t = new Transition(g, g2);
@@ -53,10 +55,15 @@ public class Launch {
         Transition t4 = new Transition(g4, g5);
         w.getGraph().addEdge(t4, g4, g5);
 
+        Grid test = new Grid(g4, MoveType.LEFT);
+        System.out.println(w.getGraph().containsVertex(test));
+
         w.recalculateLayout();
+
 
         System.out.println("Window constructed: " + w.toString());
 
+        /*
         try {
             ImageIcon iico = (ImageIcon) g2.getIcon();
             BufferedImage img = (BufferedImage) iico.getImage();
@@ -68,5 +75,6 @@ public class Launch {
             System.err.println("Failed to write test png file.");
             ex.printStackTrace();
         }
+        */
     }
 }

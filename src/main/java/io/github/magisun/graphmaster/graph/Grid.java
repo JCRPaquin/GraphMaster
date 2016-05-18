@@ -504,7 +504,7 @@ public class Grid {
         Grid g = (Grid) o;
         if(g.parent != null && g.executedMove == MoveType.NONE) return false;
 
-        return isSimilar((Grid) o);
+        return isSimilar(g);
     }
 
     void writeToStream(ObjectOutputStream stream)

@@ -32,9 +32,11 @@ public class AddOriginNodeDialog extends JDialog {
     private GridTableModel currentModel;
 
     public AddOriginNodeDialog(Function<Grid, Void> callback) {
-        this.callback = callback;
-
+        super();
         setModal(true);
+        setTitle("Add origin node");
+
+        this.callback = callback;
 
         contentPane = new JPanel();
         setContentPane(contentPane);
