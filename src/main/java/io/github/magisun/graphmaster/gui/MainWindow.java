@@ -8,8 +8,10 @@ import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.SatelliteVisualizationViewer;
+import edu.uci.ics.jung.visualization.picking.ClosestShapePickSupport;
 import io.github.magisun.graphmaster.graph.Grid;
 import io.github.magisun.graphmaster.graph.Transition;
+import io.github.magisun.graphmaster.gui.control.EditNodesPlugin;
 import io.github.magisun.graphmaster.gui.transformers.GridIconTransformer;
 import io.github.magisun.graphmaster.gui.transformers.GridShapeTransformer;
 
@@ -76,12 +78,14 @@ public class MainWindow extends JFrame {
         Forest<Grid, Transition> forest = new DelegateForest<>(graph);
         TreeLayout<Grid, Transition> treeLayout = new TreeLayout<>(forest, 100, 100);
         viewer = new VisualizationViewer<>(treeLayout);
+        viewer.setPickSupport(new ClosestShapePickSupport<>(viewer));
         viewer.getRenderContext()
                 .setVertexIconTransformer(GridIconTransformer.SINGLETON);
         viewer.getRenderContext()
                 .setVertexShapeTransformer(GridShapeTransformer.SINGLETON);
         DefaultModalGraphMouse<Grid, Transition> mouse = new DefaultModalGraphMouse<>();
         mouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+        mouse.add(new EditNodesPlugin());
         viewer.setGraphMouse(mouse);
 
         contentPane.add(viewer);
@@ -141,12 +145,18 @@ public class MainWindow extends JFrame {
 
     public void setGraph(DirectedSparseGraph<Grid, Transition> newGraph) {
         graph = newGraph;
-        Grid g = newGraph.getVertices().iterator().next();
-        int gridWidth = g.getIcon().getIconWidth(),
-                gridHeight = g.getIcon().getIconHeight();
+        TreeLayout<Grid, Transition> treeLayout;
+        if(!newGraph.getVertices().isEmpty()) {
+            Grid g = newGraph.getVertices().iterator().next();
+            int gridWidth = g.getIcon().getIconWidth(),
+                    gridHeight = g.getIcon().getIconHeight();
 
-        Forest<Grid, Transition> forest = new DelegateForest<>(graph);
-        TreeLayout<Grid, Transition> treeLayout = new TreeLayout<>(forest, gridWidth+50, gridHeight+50);
+            Forest<Grid, Transition> forest = new DelegateForest<>(graph);
+            treeLayout = new TreeLayout<>(forest, gridWidth + 50, gridHeight + 50);
+        } else {
+            Forest<Grid, Transition> forest = new DelegateForest<>(graph);
+            treeLayout = new TreeLayout<>(forest);
+        }
         viewer.setGraphLayout(treeLayout);
     }
 

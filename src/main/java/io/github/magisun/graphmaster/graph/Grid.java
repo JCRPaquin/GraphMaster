@@ -4,9 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,11 +19,12 @@ public class Grid {
     /**
      * Space size in pixels
      */
-    public static final int SPACE_SIZE = 20;
+    public static final int SPACE_SIZE = 30;
 
     private Dimension gridSize;
     private int emptyX, emptyY;
-    private Icon icon;
+    private Icon icon, lensIcon;
+    private Color lensColor, lastLens;
 
     private int[][] grid;
 
@@ -137,10 +138,29 @@ public class Grid {
             makeIcon();
         }
 
+        if(lensColor != null && (lastLens == null || !lensColor.equals(lastLens))) {
+            BufferedImage img = (BufferedImage) ((ImageIcon) icon).getImage();
+            WritableRaster raster = img.copyData(null);
+            BufferedImage newImage = new BufferedImage(img.getColorModel(), raster,
+                    img.getColorModel().isAlphaPremultiplied(), null);
+
+            Graphics2D g2d = newImage.createGraphics();
+            g2d.setColor(lensColor);
+            g2d.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+            g2d.dispose();
+
+            lensIcon = new ImageIcon(newImage);
+            lastLens = lensColor;
+
+            return lensIcon;
+        } else if(lensColor != null && lastLens != null && lensColor.equals(lastLens)) {
+            return lensIcon;
+        }
+
         return icon;
     }
 
-    private Point getSlotImageIndex(int x, int y) {
+    public Point getSlotImageIndex(int x, int y) {
         return new Point(x*SPACE_SIZE+x+1, y*SPACE_SIZE+y+1);
     }
 
@@ -175,6 +195,8 @@ public class Grid {
         g2d.setColor(Color.WHITE);
         g2d.fillRect(newEmptySlot.x, newEmptySlot.y,
                 SPACE_SIZE, SPACE_SIZE);
+
+        g2d.dispose();
     }
 
     // Renders the board icon
@@ -265,6 +287,30 @@ public class Grid {
      */
     public MoveType getExecutedMove() {
         return executedMove;
+    }
+
+    /**
+     * @return the root Grid for this branch
+     */
+    public Grid getRoot() {
+        if(parent == null) return this;
+        return parent.getRoot();
+    }
+
+    /**
+     * @return the current lens color
+     */
+    public Color getLensColor() {
+        return lensColor;
+    }
+
+    /**
+     * Sets the lens color, the color to be painted over the grid icon upon retrieval.
+     *
+     * @param color the lens color.
+     */
+    public void setLensColor(Color color) {
+        lensColor = color;
     }
 
     private void followMove(MoveType move) {
@@ -455,6 +501,9 @@ public class Grid {
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof Grid)) return false;
+        Grid g = (Grid) o;
+        if(g.parent != null && g.executedMove == MoveType.NONE) return false;
+
         return isSimilar((Grid) o);
     }
 
